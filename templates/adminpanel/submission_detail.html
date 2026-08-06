@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}繳交詳情{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3>{{ submission.assignment.title }} － {{ submission.student.name }}（v{{ submission.version }}）</h3>
+</div>
+<p class="page-meta">
+  題目：<a href="{{ submission.assignment.problem.url }}" target="_blank" rel="noopener">{{ submission.assignment.problem.title }}</a>
+  ｜繳交時間：{{ submission.submitted_at|date:"Y-m-d H:i" }}
+  {% if submission.submitted_at > submission.assignment.due_at %}
+    <span class="badge-status badge-late">遲交</span>
+  {% else %}
+    <span class="badge-status badge-on-time">準時</span>
+  {% endif %}
+</p>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">程式碼（{{ submission.language }}）</span>
+        <span class="text-muted-sm">{{ submission.original_filename }}</span>
+      </div>
+      <div class="card-body p-0">
+        {% include "partials/code_viewer.html" with code=submission.code language=submission.language %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-white fw-semibold">歷史版本</div>
+      <div class="list-group list-group-flush">
+        {% for v in other_versions %}
+        <a href="{% url 'adminpanel:submission_detail' v.pk %}"
+           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if v.pk == submission.pk %}active{% endif %}">
+          <span>v{{ v.version }} － {{ v.submitted_at|date:"Y-m-d H:i" }}</span>
+          {% if v.submitted_at > submission.assignment.due_at %}<span class="badge-status badge-late">遲交</span>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card">
+      <div class="card-header bg-white fw-semibold">AI 評價</div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ form.content.label }}</label>
+            {{ form.content }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ form.score.label }}</label>
+            {{ form.score }}
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">儲存評價</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

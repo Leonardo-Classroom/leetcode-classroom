@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3>{{ assignment.title }}</h3>
+</div>
+<p class="page-meta">
+  題目：<a href="{{ assignment.problem.url }}" target="_blank" rel="noopener">{{ assignment.problem.title }}</a>
+  ｜難度：<span class="badge-status badge-difficulty-{{ assignment.problem.difficulty }}">{{ assignment.problem.difficulty }}</span>
+  ｜截止時間：{{ assignment.due_at|date:"Y-m-d H:i" }}
+</p>
+<p class="mb-3">
+  {% for t in assignment.problem.tags.all %}<span class="badge bg-light text-dark border">{{ t.name }}</span>{% endfor %}
+</p>
+{% if assignment.description %}<p class="mb-4">{{ assignment.description|linebreaksbr }}</p>{% endif %}
+
+<div class="mb-4">
+  {% if status.state == 'not_submitted' %}
+    <span class="badge-status badge-not-submitted fs-6">未繳交</span>
+  {% elif status.state == 'on_time' %}
+    <span class="badge-status badge-on-time fs-6">已繳交・準時</span>
+  {% else %}
+    <span class="badge-status badge-late fs-6">已繳交・遲交 {{ status.late_by_display }}</span>
+  {% endif %}
+</div>
+
+<div class="card mb-4">
+  <div class="card-header bg-white fw-semibold">上傳新版本（第 {{ status.version_count|add:"1" }} 版）</div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">選擇檔案（會自動帶入下方程式碼欄位，可再手動編輯）</label>
+        <input type="file" id="file-input" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">{{ form.code.label }}</label>
+        <div class="code-editor-wrap">
+          <pre class="code-editor-highlight" aria-hidden="true"><code id="code-highlight-layer" class="language-plaintext"></code></pre>
+          {{ form.code }}
+        </div>
+        {% if form.code.errors %}<div class="text-danger small mt-1">{{ form.code.errors|join:"、" }}</div>{% endif %}
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-sm-6 col-md-4">
+          <label class="form-label small fw-semibold">{{ form.language.label }}</label>
+          {{ form.language }}
+        </div>
+        <div class="col-12 col-sm-6 col-md-4">
+          <button type="submit" class="btn btn-primary w-100">送出</button>
+        </div>
+      </div>
+      {{ form.original_filename }}
+    </form>
+  </div>
+</div>
+
+<h5 class="section-title">歷史版本</h5>
+{% if not submissions %}
+<p class="text-muted">尚無任何繳交紀錄</p>
+{% endif %}
+<div class="accordion" id="versionAccordion">
+  {% for s in submissions %}
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button"
+              data-bs-toggle="collapse" data-bs-target="#v{{ s.pk }}">
+        <span class="d-flex flex-wrap align-items-center gap-2">
+          v{{ s.version }} － {{ s.submitted_at|date:"Y-m-d H:i" }}
+          {% if s.submitted_at > assignment.due_at %}
+            <span class="badge-status badge-late">遲交</span>
+          {% else %}
+            <span class="badge-status badge-on-time">準時</span>
+          {% endif %}
+        </span>
+      </button>
+    </h2>
+    <div id="v{{ s.pk }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#versionAccordion">
+      <div class="accordion-body p-0">
+        {% include "partials/code_viewer.html" with code=s.code language=s.language %}
+        <div class="p-3 border-top">
+          <div class="section-title mb-2" style="font-size:.92rem;">AI 評價</div>
+          {% if s.ai_review and s.ai_review.content %}
+            <p class="mb-1">{{ s.ai_review.content|linebreaksbr }}</p>
+            {% if s.ai_review.score is not None %}<p class="mb-0 fw-semibold">分數：{{ s.ai_review.score }}</p>{% endif %}
+          {% else %}
+            <p class="text-muted mb-0">尚無評價</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const extLangMap = {
+    py: 'python', java: 'java', cpp: 'cpp', cc: 'cpp', cxx: 'cpp', c: 'c', cs: 'csharp',
+    js: 'javascript', ts: 'typescript', go: 'go', rs: 'rust', kt: 'kotlin',
+    swift: 'swift', rb: 'ruby', php: 'php',
+  };
+  const supportedLangs = Object.values(extLangMap).filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+  const textarea = document.getElementById('id_code');
+  const langSelect = document.getElementById('id_language');
+  const highlightLayer = document.getElementById('code-highlight-layer');
+  const fileInput = document.getElementById('file-input');
+  const filenameInput = document.querySelector('input[name="original_filename"]');
+
+  function renderHighlight() {
+    highlightLayer.textContent = textarea.value;
+    highlightLayer.className = 'language-' + (langSelect.value || 'plaintext');
+    delete highlightLayer.dataset.highlighted;
+    hljs.highlightElement(highlightLayer);
+  }
+
+  function syncScroll() {
+    highlightLayer.parentElement.scrollTop = textarea.scrollTop;
+    highlightLayer.parentElement.scrollLeft = textarea.scrollLeft;
+  }
+
+  textarea.addEventListener('input', renderHighlight);
+  textarea.addEventListener('scroll', syncScroll);
+  langSelect.addEventListener('change', renderHighlight);
+
+  // 只要貼上程式碼，就用 hljs 猜語言並自動選好（每次貼上都會重新偵測、覆蓋掉原本的選項）
+  textarea.addEventListener('paste', function () {
+    setTimeout(function () {
+      if (textarea.value.trim()) {
+        const guess = hljs.highlightAuto(textarea.value, supportedLangs);
+        if (guess.language && supportedLangs.includes(guess.language)) {
+          langSelect.value = guess.language;
+        }
+      }
+      renderHighlight();
+    }, 0);
+  });
+
+  fileInput.addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      textarea.value = ev.target.result;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (extLangMap[ext]) {
+        langSelect.value = extLangMap[ext];
+      }
+      filenameInput.value = file.name;
+      renderHighlight();
+    };
+    reader.readAsText(file);
+  });
+
+  renderHighlight();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3>{{ assignment.title }}</h3>
+</div>
+<p class="page-meta">
+  題目：<a href="{{ assignment.problem.url }}" target="_blank" rel="noopener">{{ assignment.problem.title }}</a>
+  ｜截止時間：{{ assignment.due_at|date:"Y-m-d H:i" }}
+</p>
+{% if assignment.description %}<p class="mb-4">{{ assignment.description|linebreaksbr }}</p>{% endif %}
+
+<div class="card">
+  <div class="card-body p-0 p-md-2">
+    <table class="rtable">
+      <thead>
+        <tr><th>學號</th><th>姓名</th><th>狀態</th><th>版本數</th><th>最新繳交時間</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td data-label="學號">{{ row.student.student_id }}</td>
+          <td data-label="姓名">{{ row.student.name }}</td>
+          <td data-label="狀態">
+            {% if row.status.state == 'not_submitted' %}
+              <span class="badge-status badge-not-submitted">未繳交</span>
+            {% elif row.status.state == 'on_time' %}
+              <span class="badge-status badge-on-time">準時</span>
+            {% else %}
+              <span class="badge-status badge-late">遲交 {{ row.status.late_by_display }}</span>
+            {% endif %}
+          </td>
+          <td data-label="版本數">{{ row.status.version_count }}</td>
+          <td data-label="最新繳交時間">{{ row.status.latest_submission.submitted_at|date:"Y-m-d H:i"|default:"-" }}</td>
+          <td data-label="">
+            {% if row.status.latest_submission %}
+            <a href="{% url 'adminpanel:submission_detail' row.status.latest_submission.pk %}" class="btn btn-sm btn-outline-primary">檢視最新版本</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td class="text-muted text-center py-4" style="display:block;">尚未指派學員</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

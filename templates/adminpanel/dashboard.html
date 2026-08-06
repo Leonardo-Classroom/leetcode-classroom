@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}管理員 Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3>Dashboard</h3>
+  <div class="actions">
+    <a href="{% url 'adminpanel:problem_picker' %}" class="btn btn-primary btn-sm">＋ 派送新任務</a>
+    <a href="{% url 'adminpanel:student_create' %}" class="btn btn-outline-primary btn-sm">＋ 新增學員</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-value">{{ student_count }}</div>
+      <div class="stat-label">學員總數</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-value">{{ assignment_count }}</div>
+      <div class="stat-label">任務總數</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-value text-secondary">{{ total_not_submitted }}</div>
+      <div class="stat-label">未繳交人次</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-value text-danger">{{ total_late }}</div>
+      <div class="stat-label">遲交人次</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header bg-white fw-semibold">任務繳交進度</div>
+  <div class="card-body">
+    {% if not rows %}
+      <p class="text-muted mb-0">尚無任務，點右上角「派送新任務」開始。</p>
+    {% endif %}
+    {% for row in rows %}
+      {% with a=row.assignment c=row.counts p=row.pct %}
+      <div class="py-3 {% if not forloop.last %}border-bottom{% endif %}">
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+          <a href="{% url 'adminpanel:assignment_detail' a.pk %}" class="fw-semibold">
+            {{ a.title }}<span class="text-muted-sm"> · {{ a.problem.title }}</span>
+          </a>
+          <span class="text-muted-sm">截止 {{ a.due_at|date:"Y-m-d H:i" }}</span>
+        </div>
+        <div class="progress-split mt-2">
+          <span class="seg-on-time" style="width: {{ p.on_time }}%;"></span>
+          <span class="seg-late" style="width: {{ p.late }}%;"></span>
+          <span class="seg-not-submitted" style="width: {{ p.not_submitted }}%;"></span>
+        </div>
+        <div class="text-muted-sm mt-1">
+          準時 {{ c.on_time }} ／ 遲交 {{ c.late }} ／ 未繳交 {{ c.not_submitted }}，共指派 {{ row.total }} 人
+        </div>
+      </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

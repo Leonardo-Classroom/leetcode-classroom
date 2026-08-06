@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}建立任務{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3>建立任務</h3>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-5">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="mb-2">
+          {{ problem.number }}. {{ problem.title }}
+          <span class="badge-status badge-difficulty-{{ problem.difficulty }}">{{ problem.difficulty }}</span>
+        </h5>
+        <p class="mb-1"><a href="{{ problem.url }}" target="_blank" rel="noopener">{{ problem.url }}</a></p>
+        <p class="mb-2 text-muted-sm">通過率：{{ problem.ac_rate }}%</p>
+        <p class="mb-3">
+          {% for t in problem.tags.all %}<span class="badge bg-light text-dark border">{{ t.name }}</span>{% endfor %}
+        </p>
+        <a href="{% url 'adminpanel:problem_picker' %}" class="small">← 重新選題</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="problem_id" value="{{ problem.id }}">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ form.title.label }}</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|join:"、" }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ form.description.label }}</label>
+            {{ form.description }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ form.due_at.label }}</label>
+            {{ form.due_at }}
+            {% if form.due_at.errors %}<div class="text-danger small mt-1">{{ form.due_at.errors|join:"、" }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label small fw-semibold mb-0">{{ form.students.label }}</label>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllStudents(true)">全選</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllStudents(false)">全不選</button>
+              </div>
+            </div>
+            <div class="border rounded p-2" style="max-height: 260px; overflow-y: auto;">
+              <div class="tag-chip-list">
+                {% for checkbox in form.students %}
+                <span class="tag-chip">
+                  {{ checkbox.tag }}
+                  <label for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                </span>
+                {% endfor %}
+              </div>
+            </div>
+            {% if form.students.errors %}<div class="text-danger small mt-1">{{ form.students.errors|join:"、" }}</div>{% endif %}
+          </div>
+          <button type="submit" class="btn btn-primary">建立並指派</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAllStudents(checked) {
+  document.querySelectorAll('input[name="students"]').forEach(function (el) { el.checked = checked; });
+}
+</script>
+{% endblock %}

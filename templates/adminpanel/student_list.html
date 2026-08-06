@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}學員列表{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3>學員列表</h3>
+  <div class="actions">
+    <a href="{% url 'adminpanel:student_create' %}" class="btn btn-primary btn-sm">＋ 新增學員</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-0 p-md-2">
+    <table class="rtable">
+      <thead>
+        <tr><th>學號</th><th>姓名</th><th>班級</th><th>Email（登入帳號）</th><th>密碼狀態</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td data-label="學號">{{ s.student_id }}</td>
+          <td data-label="姓名">{{ s.name }}</td>
+          <td data-label="班級">{{ s.class_name|default:"-" }}</td>
+          <td data-label="Email（登入帳號）">{{ s.user.email|default:"-" }}</td>
+          <td data-label="密碼狀態">
+            {% if s.user.has_usable_password %}
+              <span class="badge-status badge-on-time">已設定</span>
+            {% else %}
+              <span class="badge-status badge-not-submitted">待設定（等邀請信）</span>
+            {% endif %}
+          </td>
+          <td data-label="">
+            <a href="{% url 'adminpanel:student_reset_password' s.pk %}" class="btn btn-sm btn-outline-secondary">重設密碼</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td class="text-muted text-center py-4" style="display:block;">尚無學員</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

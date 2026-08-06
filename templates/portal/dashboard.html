@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}我的任務{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3>我的任務</h3>
+</div>
+
+{% if not rows %}
+<div class="card">
+  <div class="card-body text-center text-muted py-5">目前沒有收到任何任務</div>
+</div>
+{% endif %}
+
+{% for row in rows %}
+<a href="{% url 'portal:assignment_detail' row.assignment.pk %}" class="task-card d-block text-decoration-none text-body">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+      <div class="fw-semibold">{{ row.assignment.title }}</div>
+      <div class="text-muted-sm mt-1">
+        {{ row.assignment.problem.title }}
+        <span class="badge-status badge-difficulty-{{ row.assignment.problem.difficulty }} ms-1">{{ row.assignment.problem.difficulty }}</span>
+      </div>
+      <div class="text-muted-sm mt-1">截止時間：{{ row.assignment.due_at|date:"Y-m-d H:i" }}</div>
+    </div>
+    <div class="text-end">
+      {% if row.status.state == 'not_submitted' %}
+        <span class="badge-status badge-not-submitted">未繳交</span>
+      {% elif row.status.state == 'on_time' %}
+        <span class="badge-status badge-on-time">已繳交・準時</span>
+      {% else %}
+        <span class="badge-status badge-late">已繳交・遲交 {{ row.status.late_by_display }}</span>
+      {% endif %}
+    </div>
+  </div>
+</a>
+{% endfor %}
+{% endblock %}

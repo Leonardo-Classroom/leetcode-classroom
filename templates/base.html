@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}LeetCode 教學管理系統{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/hljs/vs2015.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/custom.css' %}">
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<div class="app-shell">
+
+  {# ---------- Desktop sidebar ---------- #}
+  <aside class="app-sidebar d-none d-lg-flex">
+    {% include "partials/sidebar_nav.html" %}
+  </aside>
+
+  {# ---------- Mobile offcanvas sidebar ---------- #}
+  <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="mobileSidebar">
+    <div class="app-sidebar" style="height:100%;">
+      {% include "partials/sidebar_nav.html" %}
+    </div>
+  </div>
+
+  <div class="app-main">
+    <header class="app-topbar d-lg-none">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-label="開啟選單">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="fw-semibold">LeetCode 教學管理系統</span>
+      </div>
+      <form method="post" action="{% url 'logout' %}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-secondary">登出</button>
+      </form>
+    </header>
+
+    <main class="app-content">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+{% else %}
+  {% if messages %}
+    <div class="container pt-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% block guest_content %}{% endblock %}
+{% endif %}
+
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendor/hljs/highlight.min.js' %}"></script>
+<script>hljs.highlightAll();</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

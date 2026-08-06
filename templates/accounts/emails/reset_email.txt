@@ -1,0 +1,7 @@
+{{ user.get_username }} 你好，
+
+我們收到重設「LeetCode 教學管理系統」密碼的請求。請點擊以下連結設定新密碼（連結 3 天內有效）：
+
+　{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+
+如果這不是你本人提出的請求，請忽略這封信，你的密碼不會被更動。

@@ -1,0 +1,14 @@
+同學你好，
+
+老師派了一個新任務：
+
+　任務名稱：{{ assignment.title }}
+　題目：{{ assignment.problem.title }}（{{ assignment.problem.difficulty }}）
+　截止時間：{{ assignment.due_at|date:"Y-m-d H:i" }}
+
+{% if assignment.description %}補充說明：
+{{ assignment.description }}
+
+{% endif %}請到系統查看題目並上傳作業：
+
+　{{ link }}

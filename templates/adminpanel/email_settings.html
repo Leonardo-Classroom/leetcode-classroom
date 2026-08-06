@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Email 設定{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3>Email 設定</h3>
+</div>
+
+<p class="page-meta">
+  {% if config.is_configured %}
+    <span class="badge-status badge-on-time">使用資料庫設定的 SMTP</span>
+  {% else %}
+    <span class="badge-status badge-not-submitted">尚未設定，目前 fallback 使用：{{ fallback_backend }}</span>
+  {% endif %}
+</p>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-7">
+    <div class="card">
+      <div class="card-header bg-white fw-semibold">SMTP 設定</div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12 col-md-8">
+              <label class="form-label small fw-semibold">{{ form.host.label }}</label>
+              {{ form.host }}
+              <div class="text-muted-sm mt-1">例如：smtp.gmail.com 或學校的 mail server</div>
+              {% if form.host.errors %}<div class="text-danger small mt-1">{{ form.host.errors|join:"、" }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">{{ form.port.label }}</label>
+              {{ form.port }}
+            </div>
+          </div>
+          <div class="mb-3 mt-3">
+            <label class="form-label small fw-semibold">{{ form.username.label }}</label>
+            {{ form.username }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ form.password.label }}</label>
+            {{ form.password }}
+            <div class="text-muted-sm mt-1">{{ form.password.help_text }}</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ form.from_email.label }}</label>
+            {{ form.from_email }}
+            <div class="text-muted-sm mt-1">{{ form.from_email.help_text }}</div>
+          </div>
+          <div class="form-check mb-4">
+            {{ form.use_tls }}
+            <label class="form-check-label small" for="{{ form.use_tls.id_for_label }}">{{ form.use_tls.label }}</label>
+          </div>
+          <button type="submit" class="btn btn-primary">儲存設定</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-5">
+    <div class="card">
+      <div class="card-header bg-white fw-semibold">寄送測試信</div>
+      <div class="card-body">
+        <p class="text-muted-sm">設定完成後，寄一封測試信確認可以正常送出。</p>
+        <form method="post" action="{% url 'adminpanel:email_settings_test' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ test_form.to_email.label }}</label>
+            {{ test_form.to_email }}
+          </div>
+          <button type="submit" class="btn btn-outline-primary btn-sm">寄送測試信</button>
+        </form>
+      </div>
+    </div>
+
+    {% if config.updated_at %}
+    <p class="text-muted-sm mt-3">
+      上次更新：{{ config.updated_at|date:"Y-m-d H:i" }}
+      {% if config.updated_by %}（{{ config.updated_by.username }}）{% endif %}
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
